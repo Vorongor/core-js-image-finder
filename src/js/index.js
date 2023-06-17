@@ -1,10 +1,7 @@
 import Notiflix from 'notiflix';
-import axios from 'axios';
-// Описаний в документації
-import SimpleLightbox from "simplelightbox";
-// Додатковий імпорт стилів
-import "simplelightbox/dist/simple-lightbox.min.css";
-const apiKey = '37257084-385968b29bb2898cd9ae06014';
+import SimpleLightbox from 'simplelightbox';
+import 'simplelightbox/dist/simple-lightbox.min.css';
+import { searchImages } from './fetch.js';
 
 const searchForm = document.getElementById('search-form');
 const gallery = document.querySelector('.gallery');
@@ -12,7 +9,6 @@ const loadMoreButton = document.querySelector('.load-more');
 let currentPage = 1;
 let currentQuery = '';
 let totalHits = null;
-
 
 // Основні функції
 function clearGallery() {
@@ -34,9 +30,8 @@ function showNoResultsMessage() {
 }
 
 function initializeLightbox() {
-    const ligthbox = new SimpleLightbox('.gallery a', {
-    });
-  }
+  const lightbox = new SimpleLightbox('.gallery a', {});
+}
 
 function scrollToNextGroup() {
   const cardHeight = gallery.firstElementChild.getBoundingClientRect().height;
@@ -44,57 +39,14 @@ function scrollToNextGroup() {
     top: cardHeight * 2,
     behavior: 'smooth',
   });
-  
 }
 
 hideLoadMoreButton();
 
-searchForm.addEventListener('submit', function (e) {
-  e.preventDefault();
-  const searchQuery = e.target.elements.searchQuery.value.trim();
-  if (searchQuery === '') return;
-  currentQuery = searchQuery;
-  currentPage = 1;
-  clearGallery();
-  searchImages(searchQuery);
-  showLoadMoreButton();
-  });
-
-loadMoreButton.addEventListener('click', function () {
-  currentPage += 1;
-  searchImages(currentQuery);
-});
-
-async function searchImages(query) {
-  const url = `https://pixabay.com/api/?key=${apiKey}&q=${query}&image_type=photo&orientation=horizontal&safesearch=true&page=${currentPage}&per_page=40`;
-
-  try {
-    const response = await axios.get(url);
-    const data = response.data;
-    if (data.hits.length > 0) {
-      renderImages(data.hits);
-      totalHits = data.totalHits;
-    //   if (currentPage = 1) {
-    //     console.log(`Hooray! We found ${totalHits} images.`)
-    //   }
-        if (totalHits <= currentPage * 40) {
-        hideLoadMoreButton();
-      } else {
-        showLoadMoreButton();
-      }
-    } else {
-      showNoResultsMessage();
-    }
-  } catch (error) {
-    console.error('Error:', error);
-  }
-}
-function renderImages(images) {
+async function renderImages(images) {
   const galleryFragment = document.createDocumentFragment();
-  images.forEach(image => {
-    const card = createImageCard(image);
-    galleryFragment.appendChild(card);
-  });
+  const imageCards = images.map(image => createImageCard(image));
+  imageCards.forEach(card => galleryFragment.appendChild(card));
   gallery.appendChild(galleryFragment);
   initializeLightbox();
   scrollToNextGroup();
@@ -103,17 +55,57 @@ function renderImages(images) {
 function createImageCard(image) {
   const card = document.createElement('div');
   card.innerHTML = `
-  <div class="photo-card">  
-  <a class="gallery__link" href="${image.largeImageURL}" data-lightbox="gallery">
-      <img class="picture gallery__image" src="${image.webformatURL}" alt="${image.tags}" loading="lazy" />
-    </a>
-    <div class="info">
-      <p class="info-item"> <span><b>Likes:</b></span><span>${image.likes}</span></p>
-      <p class="info-item"><span><b>Views:</b></span><span>${image.views}</span></p>
-      <p class="info-item"><span><b>Comments:</b></span><span>${image.comments}</span></p>
-      <p class="info-item"><span><b>Downloads:</b></span><span>${image.downloads}</span></p>
-    </div>
-    </div>
-  `;
+      <div class="photo-card">  
+        <a class="gallery__link" href="${image.largeImageURL}" data-lightbox="gallery">
+          <img class="picture gallery__image" src="${image.webformatURL}" alt="${image.tags}" loading="lazy" />
+        </a>
+        <div class="info">
+          <p class="info-item"> <span><b>Likes:</b></span><span>${image.likes}</span></p>
+          <p class="info-item"><span><b>Views:</b></span><span>${image.views}</span></p>
+          <p class="info-item"><span><b>Comments:</b></span><span>${image.comments}</span></p>
+          <p class="info-item"><span><b>Downloads:</b></span><span>${image.downloads}</span></p>
+        </div>
+      </div>
+    `;
   return card;
 }
+
+async function loadMoreImages() {
+  currentPage += 1;
+  const data = await searchImages(currentQuery, currentPage);
+  if (data && data.hits.length < 0) {
+    showNoResultsMessage();
+    return;
+  }
+  renderImages(data.hits);
+  totalHits = data.totalHits;
+  if (totalHits <= currentPage * 40) {
+    hideLoadMoreButton();
+  } else {
+    showLoadMoreButton();
+  }
+}
+
+searchForm.addEventListener('submit', async function (e) {
+  e.preventDefault();
+  const searchQuery = e.target.elements.searchQuery.value.trim();
+  if (searchQuery === '') return;
+  currentQuery = searchQuery;
+  currentPage = 1;
+  clearGallery();
+
+  const data = await searchImages(searchQuery, currentPage);
+  if (data && data.hits.length > 0) {
+    renderImages(data.hits);
+    totalHits = data.totalHits;
+    if (totalHits <= currentPage * 40) {
+      hideLoadMoreButton();
+    } else {
+      showLoadMoreButton();
+    }
+  } else {
+    showNoResultsMessage();
+  }
+});
+
+loadMoreButton.addEventListener('click', loadMoreImages);

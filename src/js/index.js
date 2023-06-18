@@ -44,17 +44,14 @@ function scrollToNextGroup() {
 hideLoadMoreButton();
 
 async function renderImages(images) {
-  const galleryFragment = document.createDocumentFragment();
   const imageCards = images.map(image => createImageCard(image));
-  imageCards.forEach(card => galleryFragment.appendChild(card));
-  gallery.appendChild(galleryFragment);
+  gallery. insertAdjacentHTML("beforeend", imageCards.join(","));
   initializeLightbox();
   scrollToNextGroup();
 }
 
 function createImageCard(image) {
-  const card = document.createElement('div');
-  card.innerHTML = `
+  return`
       <div class="photo-card">  
         <a class="gallery__link" href="${image.largeImageURL}" data-lightbox="gallery">
           <img class="picture gallery__image" src="${image.webformatURL}" alt="${image.tags}" loading="lazy" />
@@ -67,7 +64,6 @@ function createImageCard(image) {
         </div>
       </div>
     `;
-  return card;
 }
 
 async function loadMoreImages() {

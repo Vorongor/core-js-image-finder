@@ -6,7 +6,7 @@ async function searchImages(query, currentPage) {
   const url = `https://pixabay.com/api/?key=${apiKey}&q=${query}&image_type=photo&orientation=horizontal&safesearch=true&page=${currentPage}&per_page=40`;
 
   try {
-    const { data } = response = await axios.get(url);
+    const { data } = await axios.get(url);
     return data;
   } catch (error) {
     console.error('Error:', error);

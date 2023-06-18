@@ -10,6 +10,12 @@ let currentPage = 1;
 let currentQuery = '';
 let totalHits = null;
 
+const lightbox = new SimpleLightbox('.gallery a', {
+  captionsData: "alt",
+  captionDelay: 250,
+  disableScroll: false
+});
+
 // Основні функції
 function clearGallery() {
   gallery.innerHTML = '';
@@ -29,10 +35,6 @@ function showNoResultsMessage() {
   );
 }
 
-function initializeLightbox() {
-  const lightbox = new SimpleLightbox('.gallery a', {});
-}
-
 function scrollToNextGroup() {
   const cardHeight = gallery.firstElementChild.getBoundingClientRect().height;
   window.scrollBy({
@@ -45,8 +47,8 @@ hideLoadMoreButton();
 
 async function renderImages(images) {
   const imageCards = images.map(image => createImageCard(image));
-  gallery. insertAdjacentHTML("beforeend", imageCards.join(","));
-  initializeLightbox();
+  gallery. insertAdjacentHTML("beforeend", imageCards.join(""));
+  lightbox.refresh();
   scrollToNextGroup();
 }
 
